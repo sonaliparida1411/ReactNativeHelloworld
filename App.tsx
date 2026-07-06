@@ -1,97 +1,67 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
+  SafeAreaView,
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
+  FlatList,
   StyleSheet,
 } from 'react-native';
+import axios from 'axios';
 
-export default function App() {
-  const [name, setName] = useState('');
-  const [loggedIn, setLoggedIn] = useState(false);
+const App = () => {
+  const [users, setUsers] = useState([]);
 
-  const handleLogin = () => {
-    if (name.trim() !== '') {
-      setLoggedIn(true);
+  useEffect(() => {
+    getUsers();
+  }, []);
+
+  const getUsers = async () => {
+    try {
+      const response = await axios.get(
+  'http://localhost:5000/api/users/user',
+);
+
+      setUsers(response.data.data);
+    } catch (error) {
+      console.log(error);
     }
   };
 
-  // 🔵 LOGIN SCREEN
-  if (!loggedIn) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>Login Page</Text>
-
-        <TextInput
-          placeholder="Enter your name"
-          value={name}
-          onChangeText={setName}
-          style={styles.input}
-        />
-
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Login</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  // 🌸 PINK WELCOME SCREEN
   return (
-    <View style={styles.pinkContainer}>
-      <Text style={styles.welcomeText}>Hello Sinu 👋</Text>
-      <Text style={styles.welcomeTextSmall}>{name}</Text>
-    </View>
+    <SafeAreaView style={styles.container}>
+      <Text style={styles.heading}>Users</Text>
+
+      <FlatList
+        data={users}
+        keyExtractor={(item: any) => item.id.toString()}
+        renderItem={({ item }: any) => (
+          <View style={styles.card}>
+            <Text>Name: {item.name}</Text>
+            <Text>Email: {item.email}</Text>
+          </View>
+        )}
+      />
+    </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: 'center',
+    marginTop: 50,
     padding: 20,
-    backgroundColor: '#fff',
   },
-  title: {
+  heading: {
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
-    textAlign: 'center',
   },
-  input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 15,
-  },
-  button: {
-    backgroundColor: '#007bff',
-    padding: 12,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: '#fff',
-    textAlign: 'center',
-    fontSize: 16,
-  },
-
-  // Pink screen
-  pinkContainer: {
-    flex: 1,
-    backgroundColor: 'pink',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  welcomeText: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  welcomeTextSmall: {
-    fontSize: 20,
-    marginTop: 10,
-    color: '#333',
+  card: {
+    backgroundColor: '#e0e0e0',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
   },
 });
+
+export default App;
