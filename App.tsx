@@ -12,37 +12,36 @@ import {
 import axios from 'axios';
 
 const App = () => {
+  console.log("APP STARTED");
+
   const [todos, setTodos] = useState([]);
   const [title, setTitle] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
-  
+  const [taskDate, setTaskDate] = useState("");
   useEffect(() => {
     getTodos();
   }, []);
     const addTodo = async () => {
-      console.log("Add Todo button pressed");
   try {
-    // Don't allow empty todos
-    if (title.trim() === '') {
+    if (title.trim() === '' || taskDate.trim() === '') {
+      console.log("Title or date missing");
       return;
     }
 
-    // Send the new todo to the backend
     await axios.post('http://localhost:5000/api/todos', {
       title: title,
-      task_date: new Date().toISOString().split("T")[0],
+      task_date: taskDate, // ✅ use user input
     });
 
-    // Clear the TextInput
     setTitle('');
-
-    // Reload the todo list
+    setTaskDate(''); // ✅ clear date field
     getTodos();
 
   } catch (error) {
     console.log(error);
   }
 };
+    
   const deleteTodo = async (id: number) => {
   try {
     await axios.delete(`http://localhost:5000/api/todos/${id}`);
@@ -53,11 +52,12 @@ const App = () => {
 };
 const editTodo = (todo: any) => {
   setTitle(todo.title);
+  setTaskDate(todo.task_date.split("T")[0]);
   setEditingId(todo.id);
 };
 const updateTodo = async () => {
   try {
-    if (title.trim() === '') {
+    if (title.trim() === ''|| taskDate.trim() === '') {
       return;
     }
 
@@ -66,13 +66,14 @@ const updateTodo = async () => {
       {
         title: title,
         completed: false,
-        task_date: new Date().toISOString().split("T")[0],
+        task_date: taskDate, // ✅ use user input
       }
     );
 
   
 
     setTitle('');
+    setTaskDate('');
     setEditingId(null);
 
     getTodos();
@@ -84,17 +85,21 @@ const updateTodo = async () => {
 
 
   const getTodos = async () => {
-    try {
-      const response = await axios.get(
-  'http://localhost:5000/api/todos',
-);
-console.log("Todos:", response.data);
+  console.log("getTodos called");
 
-      setTodos(response.data);
-    } catch (error) {
-      console.log("GET ERROR:",error);
-    }
-  };
+  try {
+    const response = await axios.get(
+      "http://localhost:5000/api/todos"
+    );
+
+    console.log("Todos:", response.data);
+
+    setTodos(response.data);
+
+  } catch (error: any) {
+    console.log("GET ERROR:", error.message);
+  }
+};
 
   return (
     <SafeAreaView style={styles.container}>
@@ -104,6 +109,12 @@ console.log("Todos:", response.data);
   placeholder="Enter a new todo"
   value={title}
   onChangeText={setTitle}
+/>
+<TextInput
+  style={styles.input}
+  placeholder="YYYY-MM-DD"
+  value={taskDate}
+  onChangeText={setTaskDate}
 />
 <TouchableOpacity
   style={styles.button}
@@ -130,6 +141,9 @@ console.log("Todos:", response.data);
 
 <Text>
   {item.completed ? "✅ Completed" : "⏳ Pending"}
+</Text>
+<Text>
+  📅 {item.task_date?.split("T")[0]}
 </Text>
 <TouchableOpacity
   style={styles.deleteButton}
