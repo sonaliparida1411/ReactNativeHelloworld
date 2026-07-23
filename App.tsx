@@ -10,6 +10,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import axios from 'axios';
+import { Calendar } from 'react-native-calendars';
 
 const App = () => {
   console.log("APP STARTED");
@@ -110,12 +111,28 @@ const updateTodo = async () => {
   value={title}
   onChangeText={setTitle}
 />
-<TextInput
-  style={styles.input}
-  placeholder="YYYY-MM-DD"
-  value={taskDate}
-  onChangeText={setTaskDate}
+<Calendar
+  onDayPress={(day) => {
+    setTaskDate(day.dateString);
+  }}
+  markedDates={{
+    [taskDate]: {
+      selected: true,
+      selectedColor: "#2196F3",
+    },
+  }}
 />
+
+<Text
+  style={{
+    fontSize: 16,
+    marginVertical: 10,
+    textAlign: "center",
+    fontWeight: "bold",
+  }}
+>
+  Selected Date: {taskDate || "No date selected"}
+</Text>
 <TouchableOpacity
   style={styles.button}
   onPress={
