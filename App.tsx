@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
@@ -5,39 +6,147 @@ import {
   Text,
   FlatList,
   StyleSheet,
+  TextInput,
+  TouchableOpacity,
 } from 'react-native';
 import axios from 'axios';
 
 const App = () => {
-  const [users, setUsers] = useState([]);
-
+  const [todos, setTodos] = useState([]);
+  const [title, setTitle] = useState('');
+  const [editingId, setEditingId] = useState<number | null>(null);
+  
   useEffect(() => {
-    getUsers();
+    getTodos();
   }, []);
+    const addTodo = async () => {
+      console.log("Add Todo button pressed");
+  try {
+    // Don't allow empty todos
+    if (title.trim() === '') {
+      return;
+    }
 
-  const getUsers = async () => {
+    // Send the new todo to the backend
+    await axios.post('http://localhost:5000/api/todos', {
+      title: title,
+      task_date: new Date().toISOString().split("T")[0],
+    });
+
+    // Clear the TextInput
+    setTitle('');
+
+    // Reload the todo list
+    getTodos();
+
+  } catch (error) {
+    console.log(error);
+  }
+};
+  const deleteTodo = async (id: number) => {
+  try {
+    await axios.delete(`http://localhost:5000/api/todos/${id}`);
+    getTodos();
+  } catch (error) {
+    console.log(error);
+  }
+};
+const editTodo = (todo: any) => {
+  setTitle(todo.title);
+  setEditingId(todo.id);
+};
+const updateTodo = async () => {
+  try {
+    if (title.trim() === '') {
+      return;
+    }
+
+    await axios.put(
+      `http://localhost:5000/api/todos/${editingId}`,
+      {
+        title: title,
+        completed: false,
+        task_date: new Date().toISOString().split("T")[0],
+      }
+    );
+
+  
+
+    setTitle('');
+    setEditingId(null);
+
+    getTodos();
+
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+
+  const getTodos = async () => {
     try {
       const response = await axios.get(
-  'http://localhost:5000/api/users/user',
+  'http://localhost:5000/api/todos',
 );
+console.log("Todos:", response.data);
 
-      setUsers(response.data.data);
+      setTodos(response.data);
     } catch (error) {
-      console.log(error);
+      console.log("GET ERROR:",error);
     }
   };
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.heading}>Users</Text>
+      <Text style={styles.heading}>Todo App</Text>
+      <TextInput
+  style={styles.input}
+  placeholder="Enter a new todo"
+  value={title}
+  onChangeText={setTitle}
+/>
+<TouchableOpacity
+  style={styles.button}
+  onPress={
+    editingId ? updateTodo : addTodo
+  }
+>
+  <Text style={styles.buttonText}>
+    {editingId ? "Update Todo" : "Add Todo"}
+  </Text>
+</TouchableOpacity>
+
+
+
 
       <FlatList
-        data={users}
+        data={todos}
         keyExtractor={(item: any) => item.id.toString()}
         renderItem={({ item }: any) => (
           <View style={styles.card}>
-            <Text>Name: {item.name}</Text>
-            <Text>Email: {item.email}</Text>
+            <Text style={{fontSize:18,fontWeight:'bold'}}>
+  {item.title}
+</Text>
+
+<Text>
+  {item.completed ? "✅ Completed" : "⏳ Pending"}
+</Text>
+<TouchableOpacity
+  style={styles.deleteButton}
+  onPress={() => deleteTodo(item.id)}
+>
+  <Text style={styles.deleteButtonText}>
+    🗑 Delete
+  </Text>
+</TouchableOpacity>
+<TouchableOpacity
+  style={styles.editButton}
+  onPress={() => editTodo(item)}
+>
+  <Text style={styles.editButtonText}>
+    ✏️ Edit
+  </Text>
+</TouchableOpacity>
           </View>
         )}
       />
@@ -62,6 +171,51 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     marginBottom: 10,
   },
+  input: {
+  borderWidth: 1,
+  borderColor: '#ccc',
+  borderRadius: 10,
+  padding: 12,
+  marginBottom: 10,
+},
+
+button: {
+  backgroundColor: '#2196F3',
+  padding: 15,
+  borderRadius: 10,
+  marginBottom: 20,
+},
+
+buttonText: {
+  color: '#fff',
+  textAlign: 'center',
+  fontWeight: 'bold',
+  fontSize: 18,
+},
+deleteButton: {
+  backgroundColor: "#973a33",
+  padding: 10,
+  marginTop: 10,
+  borderRadius: 8,
+},
+
+deleteButtonText: {
+  color: "#fff",
+  textAlign: "center",
+  fontWeight: "bold",
+},
+editButton: {
+  backgroundColor: '#d9c27e',
+  padding: 10,
+  borderRadius: 8,
+  marginTop: 10,
+},
+
+editButtonText: {
+  color: '#000',
+  textAlign: 'center',
+  fontWeight: 'bold',
+},
 });
 
-export default App;
+export default App
