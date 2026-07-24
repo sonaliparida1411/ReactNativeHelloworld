@@ -1,4 +1,5 @@
-
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import LoginScreen from "./screens/LoginScreen";
 import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
@@ -13,6 +14,7 @@ import axios from 'axios';
 import { Calendar } from 'react-native-calendars';
 
 const App = () => {
+  const [loggedIn, setLoggedIn] = useState(false);
   console.log("APP STARTED");
 
   const [todos, setTodos] = useState([]);
@@ -24,31 +26,52 @@ const App = () => {
   }, []);
     const addTodo = async () => {
   try {
-    if (title.trim() === '' || taskDate.trim() === '') {
-      console.log("Title or date missing");
+    if (title.trim() === "" || taskDate.trim() === "") {
       return;
     }
 
-    await axios.post('http://localhost:5000/api/todos', {
-      title: title,
-      task_date: taskDate, // ✅ use user input
-    });
+    const token = await AsyncStorage.getItem("token");
 
-    setTitle('');
-    setTaskDate(''); // ✅ clear date field
+    await axios.post(
+      "http://localhost:5050/api/todos",
+      {
+        title,
+        task_date: taskDate,
+      },
+      {
+        headers: {
+          Authorization: token,
+        },
+      }
+    );
+
+    setTitle("");
+    setTaskDate("");
+
     getTodos();
 
-  } catch (error) {
-    console.log(error);
+  } catch (error: any) {
+    console.log(error.response?.data);
   }
 };
     
   const deleteTodo = async (id: number) => {
   try {
-    await axios.delete(`http://localhost:5000/api/todos/${id}`);
+    const token = await AsyncStorage.getItem("token");
+
+    await axios.delete(
+      `http://localhost:5050/api/todos/${id}`,
+      {
+        headers: {
+          Authorization: token,
+        },
+      }
+    );
+
     getTodos();
-  } catch (error) {
-    console.log(error);
+
+  } catch (error: any) {
+    console.log(error.response?.data);
   }
 };
 const editTodo = (todo: any) => {
@@ -58,39 +81,48 @@ const editTodo = (todo: any) => {
 };
 const updateTodo = async () => {
   try {
-    if (title.trim() === ''|| taskDate.trim() === '') {
+    if (title.trim() === "" || taskDate.trim() === "") {
       return;
     }
 
+    const token = await AsyncStorage.getItem("token");
+
     await axios.put(
-      `http://localhost:5000/api/todos/${editingId}`,
+      `http://localhost:5050/api/todos/${editingId}`,
       {
-        title: title,
+        title,
         completed: false,
-        task_date: taskDate, // ✅ use user input
+        task_date: taskDate,
+      },
+      {
+        headers: {
+          Authorization: token,
+        },
       }
     );
 
-  
-
-    setTitle('');
-    setTaskDate('');
+    setTitle("");
+    setTaskDate("");
     setEditingId(null);
 
     getTodos();
 
-  } catch (error) {
-    console.log(error);
+  } catch (error: any) {
+    console.log(error.response?.data);
   }
 };
 
-
   const getTodos = async () => {
-  console.log("getTodos called");
-
   try {
+    const token = await AsyncStorage.getItem("token");
+
     const response = await axios.get(
-      "http://localhost:5000/api/todos"
+      "http://localhost:5050/api/todos",
+      {
+        headers: {
+          Authorization: token,
+        },
+      }
     );
 
     console.log("Todos:", response.data);
@@ -98,9 +130,14 @@ const updateTodo = async () => {
     setTodos(response.data);
 
   } catch (error: any) {
-    console.log("GET ERROR:", error.message);
+    console.log("GET ERROR:", error.response?.data);
+    console.log("STATUS:", error.response?.status);
+    console.log("MESSAGE:", error.message);
   }
 };
+if (!loggedIn) {
+  return <LoginScreen onLogin={() => setLoggedIn(true)} />;
+}
 
   return (
     <SafeAreaView style={styles.container}>
