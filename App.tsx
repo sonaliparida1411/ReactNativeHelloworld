@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import LoginScreen from "./screens/LoginScreen";
+import RegisterScreen from "./screens/RegisterScreen";
+import AdminScreen from "./screens/AdminScreen";
 import React, { useEffect, useState } from 'react';
 import {
   SafeAreaView,
@@ -15,6 +17,24 @@ import { Calendar } from 'react-native-calendars';
 
 const App = () => {
   const [loggedIn, setLoggedIn] = useState(false);
+  const [showRegister, setShowRegister] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+ const checkLogin = async () => {
+  try {
+    const token = await AsyncStorage.getItem("token");
+    const role = await AsyncStorage.getItem("role");
+
+    if (token) {
+      setLoggedIn(true);
+
+      if (role === "admin") {
+        setIsAdmin(true);
+      }
+    }
+  } catch (error) {
+    console.log("Check Login Error:", error);
+  }
+};
   console.log("APP STARTED");
 
   const [todos, setTodos] = useState([]);
@@ -22,8 +42,13 @@ const App = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [taskDate, setTaskDate] = useState("");
   useEffect(() => {
+     if (loggedIn) {
     getTodos();
-  }, []);
+     }
+  }, [loggedIn]);
+  useEffect(() => {
+  checkLogin();
+}, []);
     const addTodo = async () => {
   try {
     if (title.trim() === "" || taskDate.trim() === "") {
@@ -124,6 +149,7 @@ const updateTodo = async () => {
         },
       }
     );
+    
 
     console.log("Todos:", response.data);
 
@@ -135,13 +161,37 @@ const updateTodo = async () => {
     console.log("MESSAGE:", error.message);
   }
 };
-if (!loggedIn) {
-  return <LoginScreen onLogin={() => setLoggedIn(true)} />;
-}
 
+
+const logout = async () => {
+  await AsyncStorage.removeItem("token");
+  setLoggedIn(false);
+};
+if (showRegister) {
+  return <RegisterScreen />;
+}
+if (!loggedIn) {
   return (
+    <LoginScreen
+      onLogin={() => setLoggedIn(true)}
+      onRegister={() => setShowRegister(true)}
+    />
+  );
+}
+ if (isAdmin) {
+  return <AdminScreen />;
+}
+return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.heading}>Todo App</Text>
+      <TouchableOpacity
+  style={styles.deleteButton}
+  onPress={logout}
+>
+  <Text style={styles.deleteButtonText}>
+    Logout
+  </Text>
+</TouchableOpacity>
       <TextInput
   style={styles.input}
   placeholder="Enter a new todo"

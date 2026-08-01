@@ -10,7 +10,7 @@ import {
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const LoginScreen = ({ onLogin }: any) => {
+const LoginScreen = ({ onLogin, onRegister }: any) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -25,12 +25,14 @@ const LoginScreen = ({ onLogin }: any) => {
       );
 
       const token = response.data.token;
+      const role = response.data.user.role;
 
       await AsyncStorage.setItem("token", token);
+      await AsyncStorage.setItem("role", role);
 
       Alert.alert("Success", "Login Successful");
 
-      onLogin();
+      onLogin(role);
 
     } 
     catch (error: any) {
@@ -72,6 +74,19 @@ const LoginScreen = ({ onLogin }: any) => {
           Login
         </Text>
       </TouchableOpacity>
+      <TouchableOpacity onPress={onRegister}>
+  <Text
+    style={{
+      textAlign: "center",
+      marginTop: 20,
+      color: "#2196F3",
+      fontSize: 16,
+      fontWeight: "bold",
+    }}
+  >
+    Create New Account
+  </Text>
+</TouchableOpacity>
     </View>
   );
 };
